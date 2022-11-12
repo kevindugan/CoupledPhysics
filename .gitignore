@@ -1,7 +1,14 @@
+# Pytest
+__pycache__
+.pytest_cache
+
+# Latex
 *.aux
 *.log
 *.pdf
 *.bbl
 *.blg
+
+# VTK Meshfiles
 *.vtu
 *.pvtu

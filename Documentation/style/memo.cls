@@ -18,6 +18,7 @@
 
 \setlength{\jot}{1.5em}       % Spacing between gathered equations
 \setlength{\parindent}{0em}   % No indent paragraphs
+\setlength{\parskip}{1em}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Title formatting

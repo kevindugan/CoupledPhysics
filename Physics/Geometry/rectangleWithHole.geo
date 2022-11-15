@@ -10,4 +10,11 @@ BooleanDifference{ Surface{1}; Delete; }{ Surface{2}; Delete; }
 MeshSize{ PointsOf{ Surface{1}; } } = mesh_size;
 Recombine Surface{1};
 
+//Physical Curve("yneg") = {1};
+//Physical Curve("xneg") = {2};
+//Physical Curve("xpos") = {3};
+//Physical Curve("ypos") = {4};
+//Physical Curve("inner") = {5};
+//Physical Surface("region") = {1};
+
 Mesh 2;

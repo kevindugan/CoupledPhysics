@@ -37,6 +37,15 @@ class Geometry2D():
         cells = [cell for cell in mesh.cells if cell.type == "quad"][0] # Reading in only quad elements, expecting only 1 region
         myCell = lambda x: x[0] >= myExtentX[0] and x[0] < myExtentX[1] and x[1] >= myExtentY[0] and x[1] < myExtentY[1]
         self.localConn = [v for v in cells.data if myCell(sum( mesh.points[v], axis=0 )/4.0)]
+        
+        # Boundary sets
+        boundaryNames = ["inner", "yneg", "xneg", "xpos", "ypos"]
+        boundary = [cell for cell in mesh.cells if cell.type == "line"]
+        assert len(boundary) == len(boundaryNames), "Boundary names don't match"
+
+        nodeSet = set([vertex for elem in self.localConn for vertex in elem])
+        self.boundaryNodes = {key: list(set([vertex for elem in lines.data for vertex in elem]).intersection(nodeSet)) for key,lines in zip(boundaryNames, boundary)}
+        print(f"Rank {self.mpiRank}: {self.boundaryNodes}")
 
     def writeVTKsolution(self, fileroot="solution", in_cell_data = {}, in_point_data = {}):
         self.__writePVTU(fileroot)

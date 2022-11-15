@@ -55,6 +55,25 @@ element ($\mathcal{E}$).
     \xi \in [-1,1]
 \end{equation}
 
+which are visualized in Figure~\ref{fig:hier1d}
+
+\begin{figure}[h]
+    \centering
+    \begin{tikzpicture}
+        \draw[gray] (-5,5) -- (5.5,5);
+        \draw[gray] (5,0) -- (5,5.5);
+        \draw[thick, -{>[scale=1.5]}] (-5.5,0) node[anchor=east] {0} -- (5.5,0);
+        \draw[thick] (0,0.1) -- (0,-0.1) node[anchor=north] {0};
+        \draw[thick] (5,0.1) -- (5,-0.1) node[anchor=north] {1};
+        \draw[thick, -{>[scale=1.5]}] (-5,-0.5) node[anchor=north] {-1} -- (-5,5.5);
+        \draw[thick] (-4.9,5) -- (-5.1,5) node[anchor=east] {1};
+
+        % \draw
+    \end{tikzpicture}
+    \caption{Hierarchical Lagrangian basis functions up to order 3}
+    \label{fig:hier1d}
+\end{figure}
+
 With a 2D reference element ($\mathcal{E}^2 = \{x,y|x,y\in \left[-1,1\right]\}$), the
 2D basis functions can be defined through a tensor product of the 1D basis functions.
 Note that this only applies on quadrilateral/hexahedral elements.

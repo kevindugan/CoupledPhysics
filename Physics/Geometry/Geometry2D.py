@@ -1,5 +1,6 @@
 import meshio
 from numpy import linspace, sum, array
+from numpy.linalg import inv
 from mpi4py import MPI
 
 class Geometry2D():
@@ -11,6 +12,9 @@ class Geometry2D():
         # Parallel Decomposition
         nBlockX, nBlockY = MPI.Compute_dims(self.mpiSize, 2)
         self.cartComm = self.comm.Create_cart([nBlockX, nBlockY], [False, False], True)
+
+    def __iter__(self):
+        return GeometryIterator(self)
 
     def readGMsh(self, filename, boundaryNames = []):
         assert filename[-4:] == ".msh", f"Expected GMsh *.msh found *{filename[-4:]}"
@@ -36,7 +40,7 @@ class Geometry2D():
         # processor's extent. Assume there is only one region in the mesh
         cells = [cell for cell in mesh.cells if cell.type == "quad"][0] # Reading in only quad elements, expecting only 1 region
         myCell = lambda x: x[0] >= myExtentX[0] and x[0] < myExtentX[1] and x[1] >= myExtentY[0] and x[1] < myExtentY[1]
-        self.localConn = [v for v in cells.data if myCell(sum( mesh.points[v], axis=0 )/4.0)]
+        self.localConn = [MeshCell2D(v,self.globalPoints) for v in cells.data if myCell(sum( mesh.points[v], axis=0 )/4.0)]
         
         # Boundary sets
         # Boundaries show up as line-type cells. The order for the rectangle with hole
@@ -64,7 +68,7 @@ class Geometry2D():
         # Create a new local mesh object
         newMesh = meshio.Mesh(
             self.globalPoints,
-            [("quad", self.localConn)],
+            [("quad", [v.connectivity for v in self.localConn])],
             cell_data=local_cell_data,
             point_data=local_point_data
         )
@@ -99,3 +103,46 @@ class Geometry2D():
 
         with open(fileroot+".pvtu", "w") as f:
             f.writelines(data)
+
+class GeometryIterator():
+    def __init__(self, geom):
+        self._geom = geom
+        self._index = 0
+
+    def __next__(self):
+        if self._index < len(self._geom.localConn):
+            self._index += 1
+            return self._geom.localConn[self._index-1]
+        raise StopIteration
+
+class MeshCell2D():
+    def __init__(self, connectivity, points):
+        self.vertices = [points[c] for c in connectivity]
+        self.connectivity = [c for c in connectivity]
+
+    def __iter__(self):
+        return MeshCellIterator(self)
+
+    def __repr__(self):
+        values = ", ".join([str(s) for s in self.connectivity])
+        return f"[{values}]"
+
+    def getJacobian(self, xi, eta):
+        db_dxi  = 0.25 * array([-(1-eta), (1-eta), -(1+eta), (1+eta)])
+        db_deta = 0.25 * array([ -(1-xi), -(1+xi),   (1-xi),  (1+xi)])
+        return array([[ db_dxi.dot(array([v[0] for v in self.vertices])),  db_dxi.dot(array([v[1] for v in self.vertices]))],
+                      [db_deta.dot(array([v[0] for v in self.vertices])), db_deta.dot(array([v[1] for v in self.vertices]))]])
+
+    def getInvJacobian(self, xi, eta):
+        return inv(self.getJacobian(xi,eta))
+
+class MeshCellIterator():
+    def __init__(self, meshCell):
+        self._cell = meshCell
+        self._index = 0
+
+    def __next__(self):
+        if self._index < len(self._cell.connectivity):
+            self._index += 1
+            return self._cell.connectivity[self._index-1]
+        raise StopIteration

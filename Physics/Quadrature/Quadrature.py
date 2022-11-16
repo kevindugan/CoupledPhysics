@@ -126,7 +126,6 @@ class Quadrature2D(QuadratureBase):
         pass
 
 # Iterator class for ease-of-use of Quadrature formula
-# TODO Try to put the 2D aspect in the iterator
 class QuadratureIterator():
     def __init__(self, quadrature):
         self._quadrature = quadrature

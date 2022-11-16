@@ -12,7 +12,7 @@ class Geometry2D():
         nBlockX, nBlockY = MPI.Compute_dims(self.mpiSize, 2)
         self.cartComm = self.comm.Create_cart([nBlockX, nBlockY], [False, False], True)
 
-    def readGMsh(self, filename):
+    def readGMsh(self, filename, boundaryNames = []):
         assert filename[-4:] == ".msh", f"Expected GMsh *.msh found *{filename[-4:]}"
         mesh = meshio.read(filename)
         self.globalPoints = mesh.points
@@ -39,13 +39,19 @@ class Geometry2D():
         self.localConn = [v for v in cells.data if myCell(sum( mesh.points[v], axis=0 )/4.0)]
         
         # Boundary sets
-        boundaryNames = ["inner", "yneg", "xneg", "xpos", "ypos"]
+        # Boundaries show up as line-type cells. The order for the rectangle with hole
+        # starts at the hole and then goes -y, -x, +x, +y. Labeling physical lines in
+        # Gmsh disrupts the surface cell numbering for some reason.
+        # boundaryNames = ["inner", "yneg", "xneg", "xpos", "ypos"] # imposed based on hole geometry
         boundary = [cell for cell in mesh.cells if cell.type == "line"]
         assert len(boundary) == len(boundaryNames), "Boundary names don't match"
 
+        # Calculate the intersection between nodes contained in this proc's connectivity
+        # and the nodes on a given boundary.
         nodeSet = set([vertex for elem in self.localConn for vertex in elem])
         self.boundaryNodes = {key: list(set([vertex for elem in lines.data for vertex in elem]).intersection(nodeSet)) for key,lines in zip(boundaryNames, boundary)}
-        print(f"Rank {self.mpiRank}: {self.boundaryNodes}")
+        # printBoundary = {key: [v+1 for v in value] for key,value in self.boundaryNodes.items()}
+        # print(f"Rank {self.mpiRank}: {printBoundary}")
 
     def writeVTKsolution(self, fileroot="solution", in_cell_data = {}, in_point_data = {}):
         self.__writePVTU(fileroot)

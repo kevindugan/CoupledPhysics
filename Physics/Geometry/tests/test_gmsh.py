@@ -34,28 +34,28 @@ def test_readGmshGeom(tmpdir):
     geom.readGMsh(os.path.join(tmpdir, "test.msh"),
         boundaryNames=["inner", "yneg", "xneg", "xpos", "ypos"])
     if size == 1:
-        assert len(geom.localConn) == 18.0
+        assert len(geom.localConnectivity) == 18.0
     elif size == 2:
         if rank == 0:
-            assert len(geom.localConn) == 8.0
+            assert len(geom.localConnectivity) == 8.0
         elif rank == 1:
-            assert len(geom.localConn) == 10.0
+            assert len(geom.localConnectivity) == 10.0
     elif size == 3:
         if rank == 0:
-            assert len(geom.localConn) == 6.0
+            assert len(geom.localConnectivity) == 6.0
         elif rank == 1:
-            assert len(geom.localConn) == 4.0
+            assert len(geom.localConnectivity) == 4.0
         elif rank == 2:
-            assert len(geom.localConn) == 8.0
+            assert len(geom.localConnectivity) == 8.0
     elif size == 4:
         if rank == 0:
-            assert len(geom.localConn) == 4.0
+            assert len(geom.localConnectivity) == 4.0
         elif rank == 1:
-            assert len(geom.localConn) == 4.0
+            assert len(geom.localConnectivity) == 4.0
         elif rank == 2:
-            assert len(geom.localConn) == 5.0
+            assert len(geom.localConnectivity) == 5.0
         elif rank == 3:
-            assert len(geom.localConn) == 5.0
+            assert len(geom.localConnectivity) == 5.0
 
 
 #====================================================================================

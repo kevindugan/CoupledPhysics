@@ -25,6 +25,7 @@ class QuadratureBase():
     def __iter__(self):
         return QuadratureIterator(self)
 
+    @property
     def order(self):
         return self._order
 

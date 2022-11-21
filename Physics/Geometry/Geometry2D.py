@@ -5,21 +5,68 @@ from mpi4py import MPI
 
 class Geometry2D():
     def __init__(self):
-        self.comm = MPI.COMM_WORLD
-        self.mpiRank = self.comm.Get_rank()
-        self.mpiSize = self.comm.Get_size()
+        self._comm = MPI.COMM_WORLD
+        self._mpiRank = self._comm.Get_rank()
+        self._mpiSize = self._comm.Get_size()
 
         # Parallel Decomposition
-        nBlockX, nBlockY = MPI.Compute_dims(self.mpiSize, 2)
-        self.cartComm = self.comm.Create_cart([nBlockX, nBlockY], [False, False], True)
+        nBlockX, nBlockY = MPI.Compute_dims(self._mpiSize, 2)
+        self.cartComm = self._comm.Create_cart([nBlockX, nBlockY], [False, False], True)
 
     def __iter__(self):
         return GeometryIterator(self)
 
+    @property
+    def mpiComm(self):
+        return self.cartComm
+
+    @property
+    def mpiRank(self):
+        return self._mpiRank
+
+    @property
+    def mpiSize(self):
+        return self._mpiSize
+    
+    @property
+    def globalNpoints(self):
+        return len(self._globalPoints)
+    
+    @property
+    def globalNelements(self):
+        return self._nGlobalElements
+    
+    @property
+    def localConnectivity(self):
+        return self._localConn
+    
+    @property
+    def localBoundaryNodes(self):
+        return self._boundaryNodes
+
+    def readInternal(self, xExtent=(0,1), nX=4, yExtent=(0,1), nY=5):
+        xCoor = linspace(xExtent[0], xExtent[1], nX+1)
+        yCoor = linspace(yExtent[0], yExtent[1], nY+1)
+        self._globalPoints = array([[x,y,0] for y in yCoor for x in xCoor], dtype="float64")
+        cells = array([[jt*(nX+1)+it, jt*(nX+1)+it+1, (jt+1)*(nX+1)+it+1, (jt+1)*(nX+1)+it] for jt in range(nY) for it in range(nX)])
+        self._nGlobalElements = len(cells)
+
+        nBlockX, nBlockY = self.cartComm.dims
+        xDomain = linspace(xExtent[0], xExtent[1], nBlockX+1)
+        yDomain = linspace(yExtent[0], yExtent[1], nBlockY+1)
+        myExtentX = [ xDomain[self.cartComm.coords[0]], xDomain[self.cartComm.coords[0]+1] ]
+        myExtentY = [ yDomain[self.cartComm.coords[1]], yDomain[self.cartComm.coords[1]+1] ]
+    
+        myCell = lambda x: x[0] >= myExtentX[0] and x[0] < myExtentX[1] and x[1] >= myExtentY[0] and x[1] < myExtentY[1]
+        self._localConn = [MeshCell2D(v,self._globalPoints) for v in cells if myCell(sum( self._globalPoints[v], axis=0 )/4.0)]
+
     def readGMsh(self, filename, boundaryNames = []):
         assert filename[-4:] == ".msh", f"Expected GMsh *.msh found *{filename[-4:]}"
-        mesh = meshio.read(filename)
-        self.globalPoints = mesh.points
+        localMesh = None
+        if self.mpiRank == 0:
+            localMesh = meshio.read(filename, file_format="gmsh")
+        mesh = self.mpiComm.bcast(localMesh, root=0)
+        self._globalPoints = mesh.points
 
         # Decompose the domain over processors
         # Let MPI compute number of procs per dimension, then partition Lx Ly into that
@@ -39,8 +86,9 @@ class Geometry2D():
         # Compute the centroid for a cell and determine whether it is bound by the current
         # processor's extent. Assume there is only one region in the mesh
         cells = [cell for cell in mesh.cells if cell.type == "quad"][0] # Reading in only quad elements, expecting only 1 region
+        self._nGlobalElements = len(cells)
         myCell = lambda x: x[0] >= myExtentX[0] and x[0] < myExtentX[1] and x[1] >= myExtentY[0] and x[1] < myExtentY[1]
-        self.localConn = [MeshCell2D(v,self.globalPoints) for v in cells.data if myCell(sum( mesh.points[v], axis=0 )/4.0)]
+        self._localConn = [MeshCell2D(v,self._globalPoints) for v in cells.data if myCell(sum( mesh.points[v], axis=0 )/4.0)]
         
         # Boundary sets
         # Boundaries show up as line-type cells. The order for the rectangle with hole
@@ -52,10 +100,8 @@ class Geometry2D():
 
         # Calculate the intersection between nodes contained in this proc's connectivity
         # and the nodes on a given boundary.
-        nodeSet = set([vertex for elem in self.localConn for vertex in elem])
-        self.boundaryNodes = {key: list(set([vertex for elem in lines.data for vertex in elem]).intersection(nodeSet)) for key,lines in zip(boundaryNames, boundary)}
-        # printBoundary = {key: [v+1 for v in value] for key,value in self.boundaryNodes.items()}
-        # print(f"Rank {self.mpiRank}: {printBoundary}")
+        nodeSet = set([vertex for elem in self._localConn for vertex in elem])
+        self._boundaryNodes = {key: list(set([vertex for elem in lines.data for vertex in elem]).intersection(nodeSet)) for key,lines in zip(boundaryNames, boundary)}
 
     def writeVTKsolution(self, fileroot="solution", in_cell_data = {}, in_point_data = {}):
         self.__writePVTU(fileroot)
@@ -63,20 +109,20 @@ class Geometry2D():
         # Add Domain decomposition data to output
         local_point_data = {key:value for key,value in in_point_data.items()}
         local_cell_data = {key:value for key,value in in_cell_data.items()}
-        local_cell_data["Rank"] = [ array([self.mpiRank for _ in self.localConn], dtype="int64") ]
+        local_cell_data["Rank"] = [ array([self._mpiRank for _ in self._localConn], dtype="int64") ]
 
         # Create a new local mesh object
         newMesh = meshio.Mesh(
-            self.globalPoints,
-            [("quad", [v.connectivity for v in self.localConn])],
+            self._globalPoints,
+            [("quad", [v.connectivity for v in self._localConn])],
             cell_data=local_cell_data,
             point_data=local_point_data
         )
-        newMesh.write(f"solution_{self.mpiRank:0>5d}.vtu")
+        newMesh.write(f"solution_{self._mpiRank:0>5d}.vtu")
 
     def __writePVTU(self, fileroot):
         # Only write out 1 pvtu file for all procs
-        if self.mpiRank != 0:
+        if self._mpiRank != 0:
             return
 
         # Output Header and parallel cell data
@@ -93,7 +139,7 @@ class Geometry2D():
         ]
 
         # Output parallel pieces
-        data += [f"    <Piece Source=\"{fileroot}_{it:0>5d}.vtu\"/>\n" for it in range(self.mpiSize)]
+        data += [f"    <Piece Source=\"{fileroot}_{it:0>5d}.vtu\"/>\n" for it in range(self._mpiSize)]
 
         # Output Footer
         data += [

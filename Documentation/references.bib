@@ -18,3 +18,24 @@
     year = "2000",
     publisher = "Springer"
 }
+
+@proceedings{
+
+}
+
+@inproceedings{buluc-2011,
+    author = {Bulu\c{c}, Aydin and Madduri, Kamesh},
+    title = {Parallel Breadth-First Search on Distributed Memory Systems},
+    year = {2011},
+    isbn = {9781450307710},
+    publisher = {Association for Computing Machinery},
+    address = {New York, NY, USA},
+    url = {https://doi.org/10.1145/2063384.2063471},
+    doi = {10.1145/2063384.2063471},
+    abstract = {Data-intensive, graph-based computations are pervasive in several scientific applications, and are known to to be quite challenging to implement on distributed memory systems. In this work, we explore the design space of parallel algorithms for Breadth-First Search (BFS), a key subroutine in several graph algorithms. We present two highly-tuned parallel approaches for BFS on large parallel systems: a level-synchronous strategy that relies on a simple vertex-based partitioning of the graph, and a two-dimensional sparse matrix partitioning-based approach that mitigates parallel communication overhead. For both approaches, we also present hybrid versions with intra-node multithreading. Our novel hybrid two-dimensional algorithm reduces communication times by up to a factor of 3.5, relative to a common vertex based approach. Our experimental study identifies execution regimes in which these approaches will be competitive, and we demonstrate extremely high performance on leading distributed-memory parallel systems. For instance, for a 40,000-core parallel execution on Hopper, an AMD Magny-Cours based system, we achieve a BFS performance rate of 17.8 billion edge visits per second on an undirected graph of 4.3 billion vertices and 68.7 billion edges with skewed degree distribution.},
+    booktitle = {Proceedings of 2011 International Conference for High Performance Computing, Networking, Storage and Analysis},
+    articleno = {65},
+    numpages = {12},
+    location = {Seattle, Washington},
+    series = {SC '11}
+}

@@ -1,0 +1,21 @@
+diff --git a/src/pytest_mpi/__init__.py b/src/pytest_mpi/__init__.py
+index 1d11d4f..8d5f355 100644
+--- a/src/pytest_mpi/__init__.py
++++ b/src/pytest_mpi/__init__.py
+@@ -67,6 +67,7 @@ class MPIPlugin(object):
+         Hook setting config object (always called at least once)
+         """
+         self._is_testing_mpi = self._testing_mpi(config)
++        self._is_verbose = config.getoption("verbose")
+ 
+     def pytest_collection_modifyitems(self, config, items):
+         """
+@@ -93,7 +94,7 @@ class MPIPlugin(object):
+         Hook for printing MPI info at the end of the run
+         """
+         # pylint: disable=unused-argument
+-        if self._is_testing_mpi:
++        if self._is_testing_mpi and self._is_verbose:
+             terminalreporter.section("MPI Information")
+             try:
+                 from mpi4py import MPI, rc, get_config

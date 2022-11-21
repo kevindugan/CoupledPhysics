@@ -15,3 +15,6 @@ __pycache__
 # VTK Meshfiles
 *.vtu
 *.pvtu
+
+# Images
+*.png

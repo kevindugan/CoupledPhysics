@@ -11,8 +11,10 @@ class DoFHandler():
         self._quad = quadrature
 
         # Build DoF Map
+        # print(self._geom.globalNpoints, self._geom.globalNedges, self._geom.globalNelements)
         self._globalDoFsize = self._geom.globalNpoints + \
-            self._geom.globalNelements*(self._quad.order-1)
+            self._geom.globalNedges*(self._quad.order-1) + \
+            self._geom.globalNelements*(self._quad.order-1)**2
         self.dof_map, self.dof_graph = self.__build_dof_map()
 
     @property
@@ -24,7 +26,12 @@ class DoFHandler():
         return self.dof_map
     
     @property
+    def dofConnectivity(self):
+        return self.dof_connectivity
+    
+    @property
     def sparsity(self):
+        '''Return (rowPtr, colIndices)'''
         return self._rowPointer, self._columnIndices
 
     def __build_dof_map(self):
@@ -38,14 +45,22 @@ class DoFHandler():
         # Build DoF Connectivity
         # Each cell should have a mapping to several DoFs, which correspond to basis
         # functions
-        pointsPerElement = self._quad.order+3
+        pointsPerElement = 4 + (self._quad.order-1)*4 + (self._quad.order-1)**2
+        nGlobalPoints = self._geom.globalNpoints
+        nGlobalEdges = self._geom.globalNedges
         self.dof_connectivity = [[0]*pointsPerElement for _ in self._geom.localConnectivity]
-        for it,elem in enumerate(self._geom.localConnectivity):
+        for it,(elem,edge) in enumerate(zip(self._geom.localConnectivity, self._geom.localEdgeConnectivity)):
+            # Vertex Dofs
             self.dof_connectivity[it][0:4] = list(elem)
-            start = self._geom.globalNpoints + (it+myElementOffset)*(pointsPerElement-4)
-            end = start + (pointsPerElement-4)
-            self.dof_connectivity[it][4:] = list(range(start,end))
+            # Edge Dofs
+            edge_end = self._quad.order*4
+            self.dof_connectivity[it][4:edge_end] = [nGlobalPoints + it*nGlobalEdges + e for it in range(self._quad.order-1) for e in edge]
+            # Bubble Dofs
+            start = self._geom.globalNpoints + self._geom.globalNedges*(self._quad.order-1) + (it+myElementOffset)*(pointsPerElement-4*self._quad.order)
+            end = start + (pointsPerElement-4*self._quad.order)
+            self.dof_connectivity[it][edge_end:] = list(range(start,end))
 
+        # print(f"Rank {self._geom.mpiRank} {self.dof_connectivity} {self._geom.localEdgeConnectivity}")
         # DoF graph
         localGraph = {it:set() for it in range(self._globalDoFsize)}
         for elem in self.dof_connectivity:

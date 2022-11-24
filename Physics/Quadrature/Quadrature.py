@@ -1,4 +1,5 @@
-from numpy import sqrt, array, linspace, zeros, einsum
+from numpy import sqrt, array, linspace, zeros, einsum, meshgrid, ravel
+from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import pyplot as plt
 
 class QuadratureBase():
@@ -99,6 +100,10 @@ class Quadrature1D(QuadratureBase):
         super().__init__(order)
         self.dim = 1
 
+    @property
+    def nBasisFunctions(self):
+        return len(self.get_local_shape_vector(0))
+
     def get_local_shape_vector(self, quadrature_point):
         return super().get_local_shape_vector(quadrature_point)
 
@@ -113,18 +118,40 @@ class Quadrature2D(QuadratureBase):
         super().__init__(order)
         self.dim = 2
 
+    @property
+    def nBasisFunctions(self):
+        return len(self.get_local_shape_vector((0,0)))
+
     def get_local_shape_vector(self, quadrature_point):
         x = super().get_local_shape_vector(quadrature_point[0])
         y = super().get_local_shape_vector(quadrature_point[1])
-        return einsum("i,j->ij", x.ravel(), y.ravel())
+        return ravel(einsum("i,j->ij", x.ravel(), y.ravel()))
 
     def get_local_grad_shape_vector(self, quadrature_point):
         x = super().get_local_grad_shape_vector(quadrature_point[0])
         y = super().get_local_grad_shape_vector(quadrature_point[1])
-        return einsum("i,j->ij", x.ravel(), y.ravel())
+        return ravel(einsum("i,j->ij", x.ravel(), y.ravel()))
 
     def plot_shape_functions(self, show_fig=False, save_fig=False):
-        pass
+        x = y = linspace(-1, 1, 100)
+        ref_geom = meshgrid(x, y)
+
+        nFunctions = len(self.get_local_shape_vector((0,0)))
+        for it in range(nFunctions):
+            z = array([self.get_local_shape_vector((x,y))[it] for x,y in zip(ravel(ref_geom[0]), ravel(ref_geom[1]))])
+            z = z.reshape(ref_geom[0].shape)
+
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection="3d")
+            ax.plot_surface(ref_geom[0], ref_geom[1], z)
+
+            ax.set_xticks([-1, 0, 1])
+            ax.set_yticks([-1, 0, 1])
+            ax.set_zticks([0, 1])
+            ax.grid(False)
+
+            if show_fig:
+                plt.show()
 
 # Iterator class for ease-of-use of Quadrature formula
 class QuadratureIterator():

@@ -33,12 +33,20 @@ class Geometry2D():
         return len(self._globalPoints)
     
     @property
+    def globalNedges(self):
+        return self._nGlobalEdges
+
+    @property
     def globalNelements(self):
         return self._nGlobalElements
     
     @property
     def localConnectivity(self):
         return self._localConn
+    
+    @property
+    def localEdgeConnectivity(self):
+        return self._local_edge_conn
     
     @property
     def localBoundaryNodes(self):
@@ -59,6 +67,22 @@ class Geometry2D():
     
         myCell = lambda x: x[0] >= myExtentX[0] and x[0] < myExtentX[1] and x[1] >= myExtentY[0] and x[1] < myExtentY[1]
         self._localConn = [MeshCell2D(v,self._globalPoints) for v in cells if myCell(sum( self._globalPoints[v], axis=0 )/4.0)]
+
+        edges = set()
+        for elem in cells:
+            for it,v in enumerate(elem):
+                e = tuple( sorted([v,elem[(it+1)%len(elem)]]) )
+                edges.add(e)
+        self._nGlobalEdges = len(edges)
+
+        # Construct Edge Connectivity
+        edge_indices = {e:it for it,e in enumerate(edges)}
+        self._local_edge_conn = []
+        for elem in self._localConn:
+            self._local_edge_conn.append([])
+            for it,v in enumerate(elem):
+                e = tuple( sorted([v,elem[(it+1)%len(elem)]]) )
+                self._local_edge_conn[-1].append(edge_indices[e])
 
     def readGMsh(self, filename, boundaryNames = []):
         assert filename[-4:] == ".msh", f"Expected GMsh *.msh found *{filename[-4:]}"
@@ -89,6 +113,24 @@ class Geometry2D():
         self._nGlobalElements = len(cells)
         myCell = lambda x: x[0] >= myExtentX[0] and x[0] < myExtentX[1] and x[1] >= myExtentY[0] and x[1] < myExtentY[1]
         self._localConn = [MeshCell2D(v,self._globalPoints) for v in cells.data if myCell(sum( mesh.points[v], axis=0 )/4.0)]
+
+        # Calculate unique edge in mesh
+        # Iterate over all edges in an element, collect sorted pairs in a set
+        edges = set()
+        for elem in cells.data:
+            for it,v in enumerate(elem):
+                e = tuple( sorted([v,elem[(it+1)%len(elem)]]) )
+                edges.add(e)
+        self._nGlobalEdges = len(edges)
+
+        # Construct Edge Connectivity
+        edge_indices = {e:it for it,e in enumerate(edges)}
+        self._local_edge_conn = []
+        for elem in self._localConn:
+            self._local_edge_conn.append([])
+            for it,v in enumerate(elem):
+                e = tuple( sorted([v,elem[(it+1)%len(elem)]]) )
+                self._local_edge_conn[-1].append(edge_indices[e])
         
         # Boundary sets
         # Boundaries show up as line-type cells. The order for the rectangle with hole
@@ -172,6 +214,12 @@ class MeshCell2D():
     def __repr__(self):
         values = ", ".join([str(s) for s in self.connectivity])
         return f"[{values}]"
+    
+    def __len__(self):
+        return len(self.connectivity)
+
+    def __getitem__(self, i):
+        return self.connectivity[i]
 
     def getJacobian(self, xi, eta):
         db_dxi  = 0.25 * array([-(1-eta), (1-eta), -(1+eta), (1+eta)])

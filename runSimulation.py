@@ -11,7 +11,7 @@ def run():
     # Read in GMsh
     # geom.readGMsh(filename="geometry2D_fine.msh",
     #     boundaryNames=["inner", "yneg", "xneg", "xpos", "ypos"])
-    geom.readInternal(xExtent=(1,4), nX=2, yExtent=(1,5), nY=2)
+    geom.readInternal(xExtent=(1,4), nX=4, yExtent=(1,5), nY=2)
     geom.writeVTKsolution(fileroot="solution")
 
     # Setup DoFs

@@ -122,8 +122,8 @@ class DoFHandler():
     def plotSparsity(self, fileroot="dof_sparsity", show=False, colorByRank=True):
         assert hasattr(self, "_columnIndices") and hasattr(self, "_rowPointer"), "Sparsity not Built. Must Call DoFHandler.buildSparsity() first"
 
-        colorWheel = ["blue", "orange", "green", "red", "purple", "brown", "pink", "gray", "olive", "cyan"] if colorByRank else ["red"]
-        symbWheel = ["o", "x", "+", "^"] if colorByRank else ["o"]
+        colorWheel = ["blue", "orange", "green", "red", "purple", "brown", "pink", "gray", "olive"] if colorByRank else ["red"]
+        symbWheel = ["o", "x", "+", "^", "2"] if colorByRank else ["o"]
 
         if self._geom.mpiRank == 0:
             globalA = csr_array(

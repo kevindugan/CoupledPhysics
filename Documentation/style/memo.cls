@@ -12,7 +12,7 @@
 
 \RequirePackage{graphicx}
 \RequirePackage{booktabs}
-\RequirePackage{subfig}
+\RequirePackage{subcaption}
 \RequirePackage{fancyhdr}
 \RequirePackage{ifthen}
 

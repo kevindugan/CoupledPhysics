@@ -222,13 +222,17 @@ class MeshCell2D():
         return self.connectivity[i]
 
     def getJacobian(self, xi, eta):
-        db_dxi  = 0.25 * array([-(1-eta), (1-eta), -(1+eta), (1+eta)])
-        db_deta = 0.25 * array([ -(1-xi), -(1+xi),   (1-xi),  (1+xi)])
+        db_dxi  = 0.25 * array([-(1-eta), (1-eta), (1+eta), -(1+eta)])
+        db_deta = 0.25 * array([ -(1-xi), -(1+xi),  (1+xi),  (1-xi)])
         return array([[ db_dxi.dot(array([v[0] for v in self.vertices])),  db_dxi.dot(array([v[1] for v in self.vertices]))],
                       [db_deta.dot(array([v[0] for v in self.vertices])), db_deta.dot(array([v[1] for v in self.vertices]))]])
 
     def getInvJacobian(self, xi, eta):
         return inv(self.getJacobian(xi,eta))
+
+    def getPhysicalLocation(self, xi, eta):
+        mapping = 0.25 * array([(1-xi)*(1-eta), (1+xi)*(1-eta), (1+xi)*(1+eta), (1-xi)*(1+eta)])
+        return mapping.dot(array([v[0] for v in self.vertices])), mapping.dot(array([v[1] for v in self.vertices]))
 
 class MeshCellIterator():
     def __init__(self, meshCell):

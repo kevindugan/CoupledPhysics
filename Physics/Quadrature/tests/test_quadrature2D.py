@@ -38,6 +38,33 @@ def test_weights_quartic():
     q3 = Quadrature2D(order=3)
     assert helper_check_integrand(expected=-17.5467, quad=q3, funct=quartic_function)
 
+def test_local_shape():
+    q1 = Quadrature2D(order=1)
+    b1 = q1.get_local_shape_vector((-0.5,-0.5))
+    assert b1.shape == (4,)
+
+    q2 = Quadrature2D(order=2)
+    b2 = q2.get_local_shape_vector((-0.5,-0.5))
+    assert b2.shape == (9,)
+
+    q3 = Quadrature2D(order=3)
+    b3 = q3.get_local_shape_vector((-0.5,-0.5))
+    assert b3.shape == (16,)
+
+def test_local_grad_shape():
+    q1 = Quadrature2D(order=1)
+    b1 = q1.get_local_grad_shape_vector((-0.5,-0.5))
+    assert b1.shape == (4,2)
+
+    q2 = Quadrature2D(order=2)
+    b2 = q2.get_local_grad_shape_vector((-0.5,-0.5))
+    assert b2.shape == (9,2)
+
+    q3 = Quadrature2D(order=3)
+    b3 = q3.get_local_grad_shape_vector((-0.5,-0.5))
+    assert b3.shape == (16,2)
+
+
 ###################################################################################################
 # Helper functions
 ###################################################################################################

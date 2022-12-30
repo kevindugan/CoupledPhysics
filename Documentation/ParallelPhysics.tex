@@ -60,6 +60,7 @@ which are visualized in Figure~\ref{fig:hier1d}
 \begin{figure}[h]
     \centering
     \begin{tikzpicture}
+        % Axes
         \draw[gray] (-5,5) -- (5.5,5);
         \draw[gray] (5,0) -- (5,5.5);
         \draw[thick, -{>[scale=1.5]}] (-5.5,0) node[anchor=east] {0} -- (5.5,0);
@@ -69,6 +70,10 @@ which are visualized in Figure~\ref{fig:hier1d}
         \draw[thick] (-4.9,5) -- (-5.1,5) node[anchor=east] {1};
 
         % \draw
+        \draw[ultra thick, domain=-5:5, smooth, variable=\x, blue] plot ({\x}, {5.0*0.5*(1.0+\x/5.0)});
+        \draw[ultra thick, domain=-5:5, smooth, variable=\x, blue] plot ({\x}, {5.0*0.5*(1.0-\x/5.0)});
+        \draw[ultra thick, domain=-5:5, smooth, variable=\x, red] plot ({\x}, {5.0*(1.0-(\x/5.0)*(\x/5.0))});
+        \draw[ultra thick, domain=-5:5, smooth, variable=\x, orange] plot ({\x}, {5.0*0.5625*(1.0-3.0*(\x/5.0)-(\x/5.0)*(\x/5.0)+3.0*(\x/5.0)*(\x/5.0)*(\x/5.0))});
     \end{tikzpicture}
     \caption{Hierarchical Lagrangian basis functions up to order 3}
     \label{fig:hier1d}
@@ -88,19 +93,115 @@ quadratic order for brevity, yields the following
 \begin{equation}
     \label{eq:hier2d}
     \vec{b}(\xi,\eta) = \frac{1}{4} \begin{bmatrix}
-        & \cellcolor{blue!20!white} (1-\xi)(1-\eta) & \cellcolor{blue!20!white} (1-\xi)(1+\eta) & \cellcolor{red!20!white} 2(1-\xi)(1-\eta^2) \\
-        & \cellcolor{blue!20!white} (1+\xi)(1-\eta) & \cellcolor{blue!20!white} (1+\xi)(1+\eta) & \cellcolor{red!20!white} 2(1+\xi)(1-\eta^2) \\
-        & \cellcolor{red!20!white} 2(1-\xi^2)(1-\eta) & \cellcolor{red!20!white} 2(1-\xi^2)(1+\eta) & \cellcolor{red!20!white} 4(1-\xi^2)(1-\eta^2)
+        & \cellcolor{blue!20!white} (1-\xi)(1-\eta)     & \cellcolor{blue!20!white} (1-\xi)(1+\eta)     & \cellcolor{green!20!white} 2(1-\xi)(1-\eta^2) \\
+        & \cellcolor{blue!20!white} (1+\xi)(1-\eta)     & \cellcolor{blue!20!white} (1+\xi)(1+\eta)     & \cellcolor{green!20!white} 2(1+\xi)(1-\eta^2) \\
+        & \cellcolor{green!20!white} 2(1-\xi^2)(1-\eta) & \cellcolor{green!20!white} 2(1-\xi^2)(1+\eta) & \cellcolor{red!20!white} 4(1-\xi^2)(1-\eta^2)
     \end{bmatrix}
 \end{equation}
 
 where regions highlighted with light blue ({\color{blue!20!white}\rule{1em}{1em}})
-correspond to linear shape functions and regions highlighted with light red
-({\color{red!20!white}\rule{1em}{1em}}) correspond to quadratic shape functions.
+correspond to linear shape functions which are unity on vertices. Regions highlighted
+with light green ({\color{green!20!white}\rule{1em}{1em}}) correspond to shape functions
+which are unity somewhere on an element edge. Regions highlighted with light red
+({\color{red!20!white}\rule{1em}{1em}}) bubble functions which are non-zero somewhere in
+the interior of the element.
 
-Keep in mind that the matrix structure shown in Equation~\ref{eq:hier2d} is only for
-illustrative purposes; all the basis functions defined are used as an unordered set of
-functions during matrix assembly for example.
+In an abbreviated way (Equation~\ref{eq:hier2d_q3}), we can show the hierarchical bases functions for a 2D element up
+to polynomial order 3 by denoting the order $Q_\mathrm{n}$ and denoting the type of function
+with $Q^{\{v,e,b\}}$ for functions which support DoFs on the vertices, edges, or interior (bubble).
+
+\begin{equation}
+    \label{eq:hier2d_q3}
+    \vec{b}(\xi,\eta) = \begin{bmatrix}
+        & \cellcolor{blue!20!white}  Q_1^v & \cellcolor{blue!20!white}  Q_1^v & \cellcolor{green!20!white} Q_2^e & \cellcolor{green!20!white} Q_3^e \\
+        & \cellcolor{blue!20!white}  Q_1^v & \cellcolor{blue!20!white}  Q_1^v & \cellcolor{green!20!white} Q_2^e & \cellcolor{green!20!white} Q_3^e \\
+        & \cellcolor{green!20!white} Q_2^e & \cellcolor{green!20!white} Q_2^e & \cellcolor{red!20!white}   Q_2^b & \cellcolor{red!20!white}   Q_3^b \\
+        & \cellcolor{green!20!white} Q_3^e & \cellcolor{green!20!white} Q_3^e & \cellcolor{red!20!white}   Q_3^b & \cellcolor{red!20!white}   Q_3^b
+    \end{bmatrix}
+\end{equation}
+
+In general, each shape function will support one DoF in the global system. From
+Equation~\ref{eq:hier2d_q3}, we can calculate the number of DoFs in the system since
+there will always be one DoF per vertex, $(q-1)$ DoFs per edge, and $(q-1)^2$ DoFs
+per element. The hierarchical shape functions used are shown in Figure~\ref{fig:hier2d}.
+
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/quadrature2D_000.png}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/quadrature2D_001.png}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/quadrature2D_002.png}
+    \end{subfigure}
+
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/quadrature2D_004.png}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/quadrature2D_005.png}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/quadrature2D_006.png}
+    \end{subfigure}
+
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/quadrature2D_008.png}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/quadrature2D_009.png}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/quadrature2D_010.png}
+    \end{subfigure}
+    \caption{Collection of $Q_2$ hierarchical shape functions for a 2D element. Ordering from Equation~\ref{eq:hier2d}}
+    \label{fig:hier2d}
+\end{figure}
+
+The three bubble functions and a representative edge function for the $Q_3$ elements
+are shown in Figure~\ref{fig:hier2d_q3}.
+
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/quadrature2D_007.png}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/quadrature2D_011.png}
+    \end{subfigure}
+
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/quadrature2D_014.png}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/quadrature2D_015.png}
+    \end{subfigure}
+    \caption{Example edge shape function and bubble functions for a $Q_3$ 2D element}
+    \label{fig:hier2d_q3}
+\end{figure}
 
 We've based this discussion on functions defined on a reference element, which means
 that during the system construction we'll need to map the physical element to the

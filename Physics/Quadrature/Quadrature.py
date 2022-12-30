@@ -33,17 +33,17 @@ class QuadratureBase():
     # Hierarchical shape functions from Lagrange polynomials
     def get_local_shape_vector(self, quadrature_point):
         if self._order == 1:
-            return 0.5 * array([1.0 + quadrature_point,
-                                1.0 - quadrature_point
+            return 0.5 * array([1.0 - quadrature_point,
+                                1.0 + quadrature_point
                                ])
         elif self._order == 2:
-            return 0.5 * array([1.0 + quadrature_point,
-                                1.0 - quadrature_point,
+            return 0.5 * array([1.0 - quadrature_point,
+                                1.0 + quadrature_point,
                                 2.0 * (1.0 - quadrature_point**2)
                                ])
         elif self._order == 3:
-            return 0.5 * array([1.0 + quadrature_point,
-                                1.0 - quadrature_point,
+            return 0.5 * array([1.0 - quadrature_point,
+                                1.0 + quadrature_point,
                                 2.0 * (1.0 - quadrature_point**2),
                                 1.125 * (1.0 - 3.0*quadrature_point - quadrature_point**2 + 3.0*quadrature_point**3)
                                ])
@@ -53,17 +53,17 @@ class QuadratureBase():
     # Gradients of shape functions
     def get_local_grad_shape_vector(self, quadrature_point):
         if self._order == 1:
-            return 0.5 * array([ 1,
-                                -1
+            return 0.5 * array([-1.0,
+                                 1.0
                                ])
         elif self._order == 2:
-            return 0.5 * array([ 1.0,
-                                -1.0,
+            return 0.5 * array([-1.0,
+                                 1.0,
                                 -4.0 * quadrature_point
                                ])
         elif self._order == 3:
-            return 0.5 * array([ 1.0,
-                                -1.0,
+            return 0.5 * array([-1.0,
+                                 1.0,
                                 -4.0 * quadrature_point,
                                 -1.125 * (3.0 + 2.0*quadrature_point - 9.0*quadrature_point**2)
                                ])
@@ -89,7 +89,7 @@ class QuadratureBase():
         plt.xlim([-1.1, 1.1])
 
         if save_fig:
-            plt.savefig("quadrature.png", bbox_inches='tight', pad_inches=0.1, orientation='landscape')
+            plt.savefig("quadrature1D.png", bbox_inches='tight', pad_inches=0.1, orientation='landscape')
 
         if show_fig:
             plt.show()
@@ -128,9 +128,16 @@ class Quadrature2D(QuadratureBase):
         return ravel(einsum("i,j->ij", x.ravel(), y.ravel()))
 
     def get_local_grad_shape_vector(self, quadrature_point):
-        x = super().get_local_grad_shape_vector(quadrature_point[0])
-        y = super().get_local_grad_shape_vector(quadrature_point[1])
-        return ravel(einsum("i,j->ij", x.ravel(), y.ravel()))
+        x = super().get_local_shape_vector(quadrature_point[0])
+        y = super().get_local_shape_vector(quadrature_point[1])
+
+        dx = super().get_local_grad_shape_vector(quadrature_point[0])
+        dy = super().get_local_grad_shape_vector(quadrature_point[1])
+
+        result = zeros((len(x)**2, 2))
+        result[:,0] = ravel(einsum("i,j->ij", dx.ravel(),  y.ravel()))
+        result[:,1] = ravel(einsum("i,j->ij",  x.ravel(), dy.ravel()))
+        return result
 
     def plot_shape_functions(self, show_fig=False, save_fig=False):
         x = y = linspace(-1, 1, 100)
@@ -152,6 +159,9 @@ class Quadrature2D(QuadratureBase):
 
             if show_fig:
                 plt.show()
+
+            if save_fig:
+                plt.savefig(f"quadrature2D_{it:0>3d}.png", transparent=True, bbox_inches='tight', orientation='landscape')
 
 # Iterator class for ease-of-use of Quadrature formula
 class QuadratureIterator():

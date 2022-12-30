@@ -20,6 +20,10 @@ class DoFHandler():
     @property
     def globalDoFsize(self):
         return self._globalDoFsize
+
+    @property
+    def dofsPerElement(self):
+        return (self._quad.order+1)**2
     
     @property
     def dofMap(self):

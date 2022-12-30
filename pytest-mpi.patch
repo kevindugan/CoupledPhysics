@@ -1,8 +1,8 @@
 diff --git a/src/pytest_mpi/__init__.py b/src/pytest_mpi/__init__.py
-index 1d11d4f..8d5f355 100644
+index 2d0bdb6..6b603bd 100644
 --- a/src/pytest_mpi/__init__.py
 +++ b/src/pytest_mpi/__init__.py
-@@ -67,6 +67,7 @@ class MPIPlugin(object):
+@@ -66,6 +66,7 @@ class MPIPlugin(object):
          Hook setting config object (always called at least once)
          """
          self._is_testing_mpi = self._testing_mpi(config)
@@ -10,7 +10,7 @@ index 1d11d4f..8d5f355 100644
  
      def pytest_collection_modifyitems(self, config, items):
          """
-@@ -93,7 +94,7 @@ class MPIPlugin(object):
+@@ -92,7 +93,7 @@ class MPIPlugin(object):
          Hook for printing MPI info at the end of the run
          """
          # pylint: disable=unused-argument
@@ -19,3 +19,26 @@ index 1d11d4f..8d5f355 100644
              terminalreporter.section("MPI Information")
              try:
                  from mpi4py import MPI, rc, get_config
+@@ -136,6 +137,8 @@ class MPIPlugin(object):
+                 except ImportError:
+                     pytest.fail("MPI tests require that mpi4py be installed")
+                 comm = MPI.COMM_WORLD
++
++                # Filter based on mpi comm size
+                 min_size = mark.kwargs.get('min_size')
+                 if min_size is not None and comm.size < min_size:
+                     pytest.skip(
+@@ -144,6 +147,13 @@ class MPIPlugin(object):
+                         "test".format(min_size, comm.size)
+                     )
+ 
++                max_size = mark.kwargs.get('max_size')
++                if max_size is not None and comm.size > max_size:
++                    pytest.skip(
++                        "Test requires {} MPI processes, {} MPI "
++                        "processes specified, skipping "
++                        "test".format(min_size, comm.size)
++                    )
+ 
+ @pytest.fixture
+ def mpi_file_name(tmpdir, request):

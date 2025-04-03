@@ -1,0 +1,9 @@
+FROM docker.io/debian:bookworm
+
+RUN apt update && \
+    apt install -y texlive-latex-base texlive-latex-extra make latexmk
+
+WORKDIR /app
+
+# CMD [ "bash -c 'for i in $(ls \*.tex); do base=$(basename ${i} .tex); pdflatex ${base}.tex; bibtex ${base}.aux; pdflatex ${base}.tex; pdflatex ${base}.tex; done'" ]
+CMD ["make"]

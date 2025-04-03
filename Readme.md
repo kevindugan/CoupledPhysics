@@ -18,3 +18,23 @@ This mounds the current directory to the landing directory of the container. The
 interactive terminals spun up in the container (i.e. `mpirun -n 2 xterm -e gdb path/to/executable`)
 
 **Note:** on a Mac, need to additionally start Xserver and use `xhost +localhost`
+
+## Build Documentation
+
+Documentation is built through a podman container. First build the image with
+
+```sh
+podman image build . -f Containerfile.latex -t coupled-physics:latex
+```
+
+Generate the documentation with
+
+```sh
+podman container run --rm -v ./Documentation:/app -it coupled-physics:latex
+```
+
+Clean documentation
+
+```sh
+podman container run --rm -v ./Documentation:/app -it coupled-physics:latex make clean
+```

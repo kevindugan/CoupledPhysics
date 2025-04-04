@@ -1,13 +1,16 @@
 FROM docker.io/almalinux:9.5
 
-ENV PATH=/usr/lib64/openmpi/bin:${PATH}
-ENV LD_LIBRARY_PATH=/usr/lib64/openmpi/lib:${LD_LIBRARY_PATH}
 ENV OMPI_ALLOW_RUN_AS_ROOT=1
 ENV OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
 
 RUN dnf update -y && \
-    dnf install -y openmpi-devel python3-pip python3-devel && \
-    python3 -m pip install -qU pip mpi4py meshio matplotlib scipy
+    dnf install -y dnf-plugins-core && \
+    dnf config-manager --set-enabled crb && \
+    dnf install -y openmpi-devel python3-pip python3-devel epel-release && \
+    . /etc/profile.d/modules.sh && \
+    module load mpi && \
+    dnf install -y python3-mpi4py-openmpi && \
+    python3 -m pip install -q meshio scipy matplotlib
 
 WORKDIR /app
 
